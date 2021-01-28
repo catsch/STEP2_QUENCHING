@@ -1,0 +1,18 @@
+#!/bin/sh
+
+GDACDATA="/DM/GDAC/coriolis/"
+WORKDATA="/DM/GDAC/WORK/coriolis/"
+
+for mission in `cat coriolis_CHLA.list`
+do
+
+	if [ ! -d ${WORKDATA}${mission} ]
+	then
+		cp -fr ${GDACDATA}${mission} ${WORKDATA}${mission}
+	fi
+
+	ls -1 ${WORKDATA}${mission}"/profiles/"B*.nc | grep -v D.nc > liste_all_B
+ 
+	R ${mission}.DARK --vanilla < Quenching_correction.R
+
+done
