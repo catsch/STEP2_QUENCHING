@@ -221,10 +221,7 @@ for (IDnc in LIST_nc) {
 ### index of ipar15
 	i_ipar15=which.min(abs(PRES_CTD[,iprof_chla]-ipar_15_depth))
 
-### RAPPORT at and in the MLD 
-
-	RAPP_at_MLD=(MED_CHLA[i_mld,iprof_chla])/(MED_BBP700[i_mld,iprof_chla])
-
+### RAPPORT in the MLD 
 	RAPP_in_MLD=(MED_CHLA[1:i_mld,iprof_chla])/(MED_BBP700[1:i_mld,iprof_chla])
 
 ### Sackmann, max of the Rapp between CHLA and BBP
@@ -238,7 +235,11 @@ for (IDnc in LIST_nc) {
 	if (FLAG_SHALLOW & !FLAG_NO_PAR) {
 
 # sigmoid 
-		CHLA_NPQ_D[(i_mld+1):i_ipar15,iprof_chla]=MED_CHLA[(i_mld+1):i_ipar15,iprof_chla]/(0.092+0.908/(1+(PAR_CHLA[(i_mld+1):i_ipar15]/261)^2.2))
+#		CHLA_NPQ_D[(i_mld+1):i_ipar15,iprof_chla]=MED_CHLA[(i_mld+1):i_ipar15,iprof_chla]/(0.092+0.908/(1+(PAR_CHLA[(i_mld+1):i_ipar15]/261)^2.2))
+
+		CHLA_NPQ_D[i_mld:i_ipar15,iprof_chla]=MED_CHLA[i_mld:i_ipar15,iprof_chla]/(0.092+0.908/(1+(PAR_CHLA[i_mld:i_ipar15]/261)^2.2))
+
+		RAPP_at_MLD=(CHLA_NPQ_D[i_mld,iprof_chla])/(MED_BBP700[i_mld,iprof_chla])
 
 # shallow than the MLD 
 		CHLA_NPQ_D[1:i_mld,iprof_chla]=RAPP_at_MLD*MED_BBP700[1:i_mld,iprof_chla]
