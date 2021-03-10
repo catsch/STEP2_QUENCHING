@@ -179,6 +179,10 @@ for (IDnc in LIST_nc) {
 ###  Get the CHLA_QC and change them into CHLA_ADJUSTED_QC
 	CHLA_ADJUSTED_QC=ncvar_get(filenc_B,"CHLA_QC") 
 
+###  PROFILE_CHLA
+
+	PROFILE_CHLA_QC=str_squish(ncvar_get(filenc_B,"PROFILE_CHLA_QC"))
+
 ###  Initialising the CHLA derived variables without the quenching 
 
 	MED_CHLA=CHLA # unspiked CHLA
@@ -192,6 +196,8 @@ for (IDnc in LIST_nc) {
 	BBP700=ncvar_get(filenc_B,"BBP700")
 
 	MED_BBP700=BBP700 # Filtered BBP
+
+
 
 ############################################################################################
 # Filtering the signal To remove the spikes for BBP and CHLA (Briggs et al.) 
@@ -258,19 +264,29 @@ for (IDnc in LIST_nc) {
 
 	Q_NPQ=CHLA_NPQ_D[1:i_npq,iprof_chla]/MED_CHLA[1:i_npq,iprof_chla]
 
-	Q_NPQ[which(MED_CHLA[1:i_npq,iprof_chla]==0.0)]=0.0 ### no other idea for that point 
+	Q_NPQ[which(abs(MED_CHLA[1:i_npq,iprof_chla])<0.007)]=NA ### no other idea for that point 
+
+	#### Only make sense when Q_NPQ > 0 and apply a smooth filtering
+
+	Q_NPQ[which(Q_NPQ<=0)]=NA
+
+	MED_Q_NPQ=RunningFilter(2,Q_NPQ,na.fill=T, ends.fill=T, Method="Median")
 
 #########################################################################################
 ###	Correct the spikes of the quenching
 #########################################################################################
 
-	SPIKE_CHLA_NPQ=SPIKE_CHLA[1:i_npq,iprof_chla]*Q_NPQ
+	SPIKE_CHLA_NPQ=SPIKE_CHLA[1:i_npq,iprof_chla]*MED_Q_NPQ
+
+	SPIKE_CHLA_NPQ[is.na(SPIKE_CHLA_NPQ)]=0.0
 
 #########################################################################################
 ### 	Put the spikes back on the CHLA filtered corrected from the Quenching 
 #########################################################################################
 
-	CHLA_NPQ[1:i_npq,iprof_chla]=CHLA_NPQ_D[1:i_npq,iprof_chla]+SPIKE_CHLA_NPQ
+#	CHLA_NPQ[1:i_npq,iprof_chla]=CHLA_NPQ_D[1:i_npq,iprof_chla]+SPIKE_CHLA_NPQ
+
+	CHLA_NPQ[1:i_npq,iprof_chla]=CHLA_NPQ_D[1:i_npq,iprof_chla]
 
 #########################################
 # PLOT
@@ -310,13 +326,21 @@ for (IDnc in LIST_nc) {
 
 		QC_test=substr(CHLA_ADJUSTED_QC[iprof_chla],j,j) # to keep 4 set by the Visual QC 
 
-		if ( j <= i_npq) {
+		if ( j <= i_npq) { 
 
-			substr(CHLA_ADJUSTED_QC[iprof_chla],j,j)<-as.character(5) ### Quenching QC 
+			substr(CHLA_ADJUSTED_QC[iprof_chla],j,j)<-as.character(5) ### Quenching QC
 
-		} else {
+		} else { 
 
-			if ( QC_test !="4") substr(CHLA_ADJUSTED_QC[iprof_chla],j,j)<-as.character(1)
+ 			substr(CHLA_ADJUSTED_QC[iprof_chla],j,j)<-as.character(1)
+
+		}
+
+		#### and redo the Range Checking 		
+
+		if ( CHLA_NPQ[j,iprof_chla] < -0.1 | CHLA_NPQ[j,iprof_chla] > 50. | PROFILE_CHLA_QC == "F" ) {
+
+			substr(CHLA_ADJUSTED_QC[iprof_chla],j,j)<-as.character(4)
 
 		}	
 	
