@@ -256,6 +256,18 @@ for (IDnc in LIST_nc) {
 
 	} # end if FLAG_SHALLOW
 
+######## CATHERINE #############################################################################
+######## Double check that we won't miss a max in the MLD 
+
+	if ( length(which(CHLA_NPQ_D[1:i_mld,iprof_chla]<CHLA[1:i_mld,iprof_chla])) > 5 ) {
+
+		CHLA_NPQ_D=CHLA
+
+		CHLA_NPQ_D[1:i_sack,iprof_chla]=MED_BBP700[1:i_sack,iprof_chla]*max(RAPP_in_MLD)
+
+	}
+######## CATHERINE ##############################################################################
+
 #########################################################################################
 ####  Estimating the Q_NPQ (factor of correction to apply to correct of the quenching) till i_npq index of the pressure level
 #########################################################################################
@@ -270,15 +282,15 @@ for (IDnc in LIST_nc) {
 
 	Q_NPQ[which(Q_NPQ<=0)]=NA
 
-	MED_Q_NPQ=RunningFilter(2,Q_NPQ,na.fill=T, ends.fill=T, Method="Median")
+	#MED_Q_NPQ=RunningFilter(2,Q_NPQ,na.fill=T, ends.fill=T, Method="Median")
 
 #########################################################################################
 ###	Correct the spikes of the quenching
 #########################################################################################
 
-	SPIKE_CHLA_NPQ=SPIKE_CHLA[1:i_npq,iprof_chla]*MED_Q_NPQ
+	#SPIKE_CHLA_NPQ=SPIKE_CHLA[1:i_npq,iprof_chla]*MED_Q_NPQ
 
-	SPIKE_CHLA_NPQ[is.na(SPIKE_CHLA_NPQ)]=0.0
+	#SPIKE_CHLA_NPQ[is.na(SPIKE_CHLA_NPQ)]=0.0
 
 #########################################################################################
 ### 	Put the spikes back on the CHLA filtered corrected from the Quenching 
@@ -318,13 +330,15 @@ for (IDnc in LIST_nc) {
 
 	N_QC=nchar(CHLA_ADJUSTED_QC[iprof_chla])
 
+	QC_test=unlist(strsplit(CHLA_ADJUSTED_QC[iprof_chla],split="")) # to keep 4 set by GL
+
+	if ( length(which(QC_test != "4" | QC_test != " ")) == 0 )  PROFILE_QC = "GL"
+
 	index_qc=which(!is.na(CHLA[,iprof_chla]))
 
 	for (i_qc in seq(1,length(index_qc))) {
 
 		j=index_qc[i_qc] # to avoid _ filled_values 
-
-		QC_test=substr(CHLA_ADJUSTED_QC[iprof_chla],j,j) # to keep 4 set by the Visual QC 
 
 		if ( j <= i_npq) { 
 
@@ -338,7 +352,7 @@ for (IDnc in LIST_nc) {
 
 		#### and redo the Range Checking 		
 
-		if ( CHLA_NPQ[j,iprof_chla] < -0.1 | CHLA_NPQ[j,iprof_chla] > 50. | PROFILE_CHLA_QC == "F" ) {
+		if ( CHLA_NPQ[j,iprof_chla] < -0.1 | CHLA_NPQ[j,iprof_chla] > 50. | PROFILE_CHLA_QC == "GL" ) {
 
 			substr(CHLA_ADJUSTED_QC[iprof_chla],j,j)<-as.character(4)
 
