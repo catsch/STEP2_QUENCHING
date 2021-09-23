@@ -80,6 +80,8 @@ for (IDnc in LIST_nc) {
 
 	index_chla=which(STATION_PARAMETERS == CHLA_STRING, arr.ind=TRUE)
 
+	index_par=which(STATION_PARAMETERS == PAR_STRING, arr.ind=TRUE)
+
 	if (length(index_chla)==0) {
 
 		next # jump to the next profile if no chla in the profile
@@ -122,8 +124,9 @@ for (IDnc in LIST_nc) {
 	PROFILE_PRES_CTD_QC=strsplit(ncvar_get(filenc_C,"PROFILE_PRES_QC"),split="")
 
 	if (PROFILE_PRES_CTD_QC[[1]][iprof_chla]=="E" | PROFILE_PRES_CTD_QC[[1]][iprof_chla]=="F") next
-
-	if (PROFILE_PRES_CTD_QC[[1]][iprof_par]=="E" | PROFILE_PRES_CTD_QC[[1]][iprof_par]=="F") FLAG_NO_PAR=TRUE
+	if ( !FLAG_NO_PAR ) {
+		if (PROFILE_PRES_CTD_QC[[1]][iprof_par]=="E" | PROFILE_PRES_CTD_QC[[1]][iprof_par]=="F") FLAG_NO_PAR=TRUE
+	}
 
 ###########################################################
 # Light Threshold
@@ -227,8 +230,8 @@ for (IDnc in LIST_nc) {
 ### index of ipar15
 	i_ipar15=which.min(abs(PRES_CTD[,iprof_chla]-ipar_15_depth))
 
-### RAPPORT in the MLD 
-	RAPP_in_MLD=(MED_CHLA[1:i_mld,iprof_chla])/(MED_BBP700[1:i_mld,iprof_chla])
+### RAPPORT in the MLD with the light limitation
+	RAPP_in_MLD=(MED_CHLA[1:i_ipar15,iprof_chla])/(MED_BBP700[1:i_ipar15,iprof_chla])
 
 ### Sackmann, max of the Rapp between CHLA and BBP
 
@@ -241,9 +244,9 @@ for (IDnc in LIST_nc) {
 	if (FLAG_SHALLOW & !FLAG_NO_PAR) {
 
 # sigmoid 
-#		CHLA_NPQ_D[(i_mld+1):i_ipar15,iprof_chla]=MED_CHLA[(i_mld+1):i_ipar15,iprof_chla]/(0.092+0.908/(1+(PAR_CHLA[(i_mld+1):i_ipar15]/261)^2.2))
+#		CHLA_NPQ_D[(i_mld+1):i_ipar15,iprof_chla]=MED_CHLA[(i_mld+1):i_ipar15,iprof_chla]/(0.092+0.908/(1+(MED_PAR_CHLA[(i_mld+1):i_ipar15]/261)^2.2))
 
-		CHLA_NPQ_D[i_mld:i_ipar15,iprof_chla]=MED_CHLA[i_mld:i_ipar15,iprof_chla]/(0.092+0.908/(1+(PAR_CHLA[i_mld:i_ipar15]/261)^2.2))
+		CHLA_NPQ_D[i_mld:i_ipar15,iprof_chla]=MED_CHLA[i_mld:i_ipar15,iprof_chla]/(0.092+0.908/(1+(MED_PAR_CHLA[i_mld:i_ipar15]/261)^2.2))
 
 		RAPP_at_MLD=(CHLA_NPQ_D[i_mld,iprof_chla])/(MED_BBP700[i_mld,iprof_chla])
 
