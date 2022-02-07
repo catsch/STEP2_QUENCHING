@@ -4,6 +4,9 @@
 ## Inputs : Dark corrected CHLA profiles 
 ## 
 ## Version : 13 January 2021
+## Version : 22 November 2021
+## 
+## Bug Correction : light threshold and same value in the first 10m
 ########################################################################
 
 library(ncdf4)
@@ -124,6 +127,7 @@ for (IDnc in LIST_nc) {
 	PROFILE_PRES_CTD_QC=strsplit(ncvar_get(filenc_C,"PROFILE_PRES_QC"),split="")
 
 	if (PROFILE_PRES_CTD_QC[[1]][iprof_chla]=="E" | PROFILE_PRES_CTD_QC[[1]][iprof_chla]=="F") next
+
 	if ( !FLAG_NO_PAR ) {
 		if (PROFILE_PRES_CTD_QC[[1]][iprof_par]=="E" | PROFILE_PRES_CTD_QC[[1]][iprof_par]=="F") FLAG_NO_PAR=TRUE
 	}
@@ -137,10 +141,21 @@ for (IDnc in LIST_nc) {
 	if ( !FLAG_NO_PAR ) {
 
 		DOWNWELLING_PAR=ncvar_get(filenc_B,"DOWNWELLING_PAR")
+
+##FEV22		Filtering the par to get the correct depth of ipar15
+
+		FILTER_PAR=DOWNWELLING_PAR
+
+		FILTER_PAR[,iprof_par]=RunningFilter(2,DOWNWELLING_PAR[,iprof_par],na.fill=T, ends.fill=T, Method="Median")
 		
 		if (length(which(!is.na(DOWNWELLING_PAR[,iprof_par]))) < 2 ) FLAG_NO_PAR=TRUE
 
 		ipar_15_depth=IPAR_15_DEPTH(PRES_CTD,DOWNWELLING_PAR)
+		print(ipar_15_depth)
+
+		ipar_15_depth=IPAR_15_DEPTH(PRES_CTD,FILTER_PAR)
+
+		print(ipar_15_depth)
 
 	} else {
 
@@ -161,7 +176,7 @@ for (IDnc in LIST_nc) {
 #### Working on PAR
 	if (!FLAG_NO_PAR) {
  
-		PAR_CHLA=approx(PRES_CTD[,iprof_par],DOWNWELLING_PAR[,iprof_par],PRES_CTD[,iprof_chla], rule=2)$y
+		PAR_CHLA=approx(PRES_CTD[,iprof_par],FILTER_PAR[,iprof_par],PRES_CTD[,iprof_chla], rule=2)$y
 
 #### Filtering a bit the PAR 
 		MED_PAR_CHLA=RunningFilter(2,PAR_CHLA,na.fill=T, ends.fill=T, Method="Median")
@@ -229,6 +244,9 @@ for (IDnc in LIST_nc) {
 
 ### index of ipar15
 	i_ipar15=which.min(abs(PRES_CTD[,iprof_chla]-ipar_15_depth))
+
+### inndex of i_10
+	i_10=which.min(abs(PRES_CTD[,iprof_chla]-10))
 
 ### RAPPORT in the MLD with the light limitation
 	RAPP_in_MLD=(MED_CHLA[1:i_ipar15,iprof_chla])/(MED_BBP700[1:i_ipar15,iprof_chla])
@@ -303,6 +321,13 @@ for (IDnc in LIST_nc) {
 
 	CHLA_NPQ[1:i_npq,iprof_chla]=CHLA_NPQ_D[1:i_npq,iprof_chla]
 
+#	Same value in the first 10m Try_cat (Xing 2018)
+	print(CHLA_NPQ_D[i_10,iprof_chla])
+	print(median(CHLA_NPQ[1:i_10,iprof_chla]))
+
+ 	if(i_sack>i_10)CHLA_NPQ[1:i_10,iprof_chla]=median(CHLA_NPQ_D[1:i_10,iprof_chla])
+
+
 #########################################
 # PLOT
 #########################################
@@ -355,7 +380,7 @@ for (IDnc in LIST_nc) {
 
 		#### and redo the Range Checking 		
 
-		if ( CHLA_NPQ[j,iprof_chla] < -0.1 | CHLA_NPQ[j,iprof_chla] > 50. | PROFILE_CHLA_QC == "GL" ) {
+		if ( CHLA_NPQ[j,iprof_chla] < -0.1 | CHLA_NPQ[j,iprof_chla] > 50. | PROFILE_CHLA_QC == "F" ) {
 
 			substr(CHLA_ADJUSTED_QC[iprof_chla],j,j)<-as.character(4)
 
