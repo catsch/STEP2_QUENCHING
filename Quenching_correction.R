@@ -280,7 +280,7 @@ for (IDnc in LIST_nc) {
 ######## CATHERINE #############################################################################
 ######## Double check that we won't miss a max in the MLD 
 
-	if ( length(which(CHLA_NPQ_D[1:i_mld,iprof_chla]<CHLA[1:i_mld,iprof_chla])) > 5 ) {
+	if ( length(which(CHLA_NPQ_D[1:i_mld,iprof_chla]<CHLA[1:i_mld,iprof_chla])) > 5 & median(CHLA_NPQ_D[1:i_mld,iprof_chla]-CHLA[1:i_mld,iprof_chla])>0.05 ) {
 
 		CHLA_NPQ_D=CHLA
 
